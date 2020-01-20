@@ -2,6 +2,8 @@ from flask import Flask, jsonify,request, Response
 from flask_cors import CORS 
 from flask_sqlalchemy import SQLAlchemy
 import string
+import csv
+import pandas as pd
 
 
 #class User(db.Model):
@@ -12,6 +14,29 @@ db=SQLAlchemy(app)
 CORS(app)
 app.debug = True
 print('Connected to DB !!')
+
+
+class Area(db.Model):
+    id=db.Column(db.Integer, primary_key=True)
+    AreaNo=db.Column(db.Integer)
+    AreaName=db.Column(db.String)
+    def __init__(self,AreaNo,AreaName):
+        self.AreaNo=AreaNo
+        self.AreaName=AreaName
+
+try:
+    Area.__table__.create(db.session.bind)
+except:
+    pass
+
+with open('AreaNameEnum.csv', 'r') as file:
+    data_df = pd.read_csv('AreaNameEnum.csv')
+    #print(data_df)
+    for index,row in data_df.iterrows():
+        #print(row['Area No'],row['Area Name'])
+        new_area = Area(row['Area No'],row['Area Name'])
+        db.session.add(new_area)
+    db.session.commit()
 
 class User(db.Model):
     id=db.Column(db.Integer, primary_key=True)
@@ -24,6 +49,29 @@ class User(db.Model):
 
     def __repr__(self):
         return (str(self.username) + '\t' + str(self.password))
+
+try:
+    User.__table__.create(db.session.bind)
+except:
+    pass
+
+class Ride(db.Model):
+    id=db.Column(db.Integer, primary_key=True)
+    source=db.Column(db.Integer)
+    destination=db.Column(db.Integer)
+    timestamp=db.
+
+    def __init__(self,username,password):
+        self.username=username
+        self.password=password
+
+    def __repr__(self):
+        return (str(self.username) + '\t' + str(self.password))
+
+try:
+    User.__table__.create(db.session.bind)
+except:
+    pass
 
 @app.route('/api/v1/users',methods=['PUT'])
 def addUser():
