@@ -109,9 +109,11 @@ def readRide():
         Destination=int(row[5])
         print(list([RideID,CreatedBy,Users,Timestamp,Source,Destination]))
         if(Source==source and Destination==destination):
-            filtered_list.append(list([RideID,CreatedBy,Users,Timestamp,Source,Destination]))
+            #filtered_list.append(list([RideID,CreatedBy,Users,Timestamp,Source,Destination]))
+            filtered_list.append(json.dumps({"rideId" : int(RideID),"username":str(CreatedBy),"timestamp":str(Timestamp)},default=str))
     print('filtered_list ',filtered_list)
-    return Response(json.dumps(filtered_list,default=str),status=200)
+    #return Response(json.dumps(filtered_list,default=str),status=200)
+    return Response(filtered_list,status=200)
 
 
 @app.route('/api/v1/rides',methods=['POST'])
@@ -158,13 +160,22 @@ def addUser():
 
 @app.route('/api/v1/users/<username>',methods=['DELETE'])
 def deleteUser(username):
+    username=str(username)
+    url_request = "http://localhost:5000/api/v1/db/write"
+    data_request = {'table' : 'user', 'delete' : username }
+    headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+    response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
+
+    return Response(json.dumps(dict()),status=200)
+
+    '''
     print('username received ',username)
     query_result = User.query.filter(User.username == username)
     print('Query type ',query_result.all())
     query_result.delete()
     db.session.commit()
     return Response(json.dumps(dict()),status=200)
-
+    '''
 @app.route('/api/v1/rides/<rideID_query>',methods=['GET'])
 def readRideID(rideID_query):
     rideID_query=int(rideID_query)
@@ -183,9 +194,11 @@ def readRideID(rideID_query):
         Destination=int(row[5])
         print(list([RideID,CreatedBy,Users,Timestamp,Source,Destination]))
         if(rideID_query==RideID):
-            filtered_list.append(list([RideID,CreatedBy,Users,Timestamp,Source,Destination]))
+            #filtered_list.append(list([RideID,CreatedBy,Users,Timestamp,Source,Destination]))
+            filtered_list.append(json.dumps({"rideId":RideID,"Created_by":CreatedBy,"users":list(Users.split(";")),"Timestamp": Timestamp,"source":Source,"destination":Destination}))
     print('filtered_list ',filtered_list)
-    return Response(json.dumps(filtered_list,default=str),status=200)
+    
+    return Response(filtered_list,status=200)
 
 
 @app.route('/api/v1/rides/<rideID_query>',methods=['DELETE'])
@@ -249,6 +262,13 @@ def dbWrite():
             new_user = User(username,password)
             db.session.add(new_user)
             db.session.commit()
+        
+        if 'delete' in request.json:
+            delete=request.json['delete']
+            username=str(delete)
+            User.query.filter(User.username == username).delete()
+            db.session.commit()
+
 
     if(table=="ride"):
         if 'insert' in request.json:
