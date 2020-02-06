@@ -91,6 +91,7 @@ except:
 
 @app.route('/api/v1/rides',methods=['GET'])
 def readRide():
+    
     source = int(request.args.get('source',None))
     destination = int(request.args.get('destination',None))
     print(' source ',source,' destination ',destination)
@@ -136,28 +137,51 @@ def addRides():
     print(response)
     return Response(json.dumps(dict()),status=200)
 
+##TASK 1
 @app.route('/api/v1/users',methods=['PUT'])
 def addUser():
-    username = request.json['username']
-    print('username received ',username)
-    password = request.json['password']
-    print('password received ',password)
-    if(username==None or password==None):
-        content={'Username or Password field empty !!'}
-        print(content)
-        return Response(content,status=400)
-    if(len(password)!=40 or all(c in string.hexdigits for c in password)==False):
-        content={'Password Invalid !!'}
-        print(content)
-        return Response(content, status=400)
+    try:
+        username = request.json['username']
+        #print('username received ',username)
+        password = request.json['password']
+        #print('password received ',password)
 
-    url_request = "http://localhost:80/api/v1/db/write"
-    insert_data_request=str(username)+';'+str(password)
-    data_request = {'table' : 'user', 'insert': str(insert_data_request), 'column':6 }
-    headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-    response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
-    print(response)
-    return Response(json.dumps(dict()),status=200)
+        '''
+        if(username==None or password==None):
+            content={'Username or Password field empty !!'}
+            print(content)
+            return Response(content,status=400)
+        '''
+        if(len(password)!=40 or all(c in string.hexdigits for c in password)==False):
+            print('Password Invalid !!')
+            return Response(json.dumps(dict()), status=400)
+
+        url_request = "http://localhost:80/api/v1/db/read"
+        data_request = {'table' : 'user', 'columns': '', 'where':'' }
+        headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
+        response_list=response.json()
+        print('response list ',response_list)
+
+        for row in response_list:
+            if str(username)==str(row[1]):
+                print('Duplicate username !!')
+                return Response(json.dumps(dict()), status=400)
+
+        #print(response_list)
+
+
+
+        url_request = "http://localhost:80/api/v1/db/write"
+        insert_data_request=str(username)+';'+str(password)
+        data_request = {'table' : 'user', 'insert': str(insert_data_request), 'column':6 }
+        headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
+        #print(response)
+        return Response(json.dumps(dict()),status=201)
+    except:
+        return Response(json.dumps(dict()),status=500)        
+
 
 @app.route('/api/v1/users/<username>',methods=['DELETE'])
 def deleteUser(username):
