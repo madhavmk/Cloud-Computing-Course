@@ -14,7 +14,8 @@ import ast
 
 
 app=Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@localhost/Cloud_Computing_Assignment'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@localhost/cloud_computing_assignment'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@localhost/Cloud_Computing_Assignment'
 db=SQLAlchemy(app)
 CORS(app)
 app.debug = True
@@ -94,7 +95,7 @@ def readRide():
     destination = int(request.args.get('destination',None))
     print(' source ',source,' destination ',destination)
 
-    url_request = "http://localhost:5000/api/v1/db/read"
+    url_request = "http://localhost:80/api/v1/db/read"
     data_request = {'table' : 'ride', 'columns': '', 'where':'' }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -127,7 +128,7 @@ def addRides():
     destination = request.json['destination']
     print('destination received ',destination)
     
-    url_request = "http://localhost:5000/api/v1/db/write"
+    url_request = "http://localhost:80/api/v1/db/write"
     insert_data_request=str(username)+';'+str(timestamp)+';'+str(source)+';'+str(destination)
     data_request = {'table' : 'ride', 'insert': str(insert_data_request), 'column':6 }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
@@ -150,7 +151,7 @@ def addUser():
         print(content)
         return Response(content, status=400)
 
-    url_request = "http://localhost:5000/api/v1/db/write"
+    url_request = "http://localhost:80/api/v1/db/write"
     insert_data_request=str(username)+';'+str(password)
     data_request = {'table' : 'user', 'insert': str(insert_data_request), 'column':6 }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
@@ -161,7 +162,7 @@ def addUser():
 @app.route('/api/v1/users/<username>',methods=['DELETE'])
 def deleteUser(username):
     username=str(username)
-    url_request = "http://localhost:5000/api/v1/db/write"
+    url_request = "http://localhost:80/api/v1/db/write"
     data_request = {'table' : 'user', 'delete' : username }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -179,7 +180,7 @@ def deleteUser(username):
 @app.route('/api/v1/rides/<rideID_query>',methods=['GET'])
 def readRideID(rideID_query):
     rideID_query=int(rideID_query)
-    url_request = "http://localhost:5000/api/v1/db/read"
+    url_request = "http://localhost:80/api/v1/db/read"
     data_request = {'table' : 'ride', 'columns': '', 'where':'' }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -204,7 +205,7 @@ def readRideID(rideID_query):
 @app.route('/api/v1/rides/<rideID_query>',methods=['DELETE'])
 def deleteRideID(rideID_query):
     rideID_query=int(rideID_query)
-    url_request = "http://localhost:5000/api/v1/db/write"
+    url_request = "http://localhost:80/api/v1/db/write"
     data_request = {'table' : 'ride', 'delete' : str(rideID_query) }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -215,7 +216,7 @@ def deleteRideID(rideID_query):
 def updateRideUsers(rideID_query):
     rideID_query=int(rideID_query)
     username = str(request.json['username'])
-    url_request = "http://localhost:5000/api/v1/db/write"
+    url_request = "http://localhost:80/api/v1/db/write"
     data_request = {'table' : 'ride', 'update' : str(rideID_query)+';'+str(username) }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
