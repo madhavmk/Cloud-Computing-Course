@@ -14,7 +14,7 @@ import ast
 
 
 app=Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@localhost/cloud_computing_assignment'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@localhost/cloud_computing_assignment_ride'
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@localhost/Cloud_Computing_Assignment'
 db=SQLAlchemy(app)
 CORS(app)
@@ -78,11 +78,12 @@ try:
     db.session.commit()
 except:
     pass
-
+"""
 try:
     User.__table__.create(db.session.bind)
 except:
     pass
+"""
 
 try:
     Ride.__table__.create(db.session.bind)
@@ -104,7 +105,7 @@ def readRide():
 
 
 
-        url_request = "http://localhost:80/api/v1/db/read"
+        url_request = "http://localhost:82/api/v1/db/read"
         data_request = {'table' : 'ride', 'columns': '', 'where':'' }
         headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -143,38 +144,7 @@ def readRide():
         print('EXCEPT ERROR IN TASK 4 !!')
         return Response(json.dumps(dict()),status=500)
 
-"""
-#Task 4
-@app.route('/api/v1/rides',methods=['GET'])
-def readRide():
-    try: 
-        source = int(request.args.get('source',None))
-        destination = int(request.args.get('destination',None))
-        print(' source ',source,' destination ',destination)
 
-        url_request = "http://localhost:80/api/v1/db/read"
-        data_request = {'table' : 'ride', 'columns': '', 'where':'' }
-        headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
-        response_list=response.json()
-        filtered_list=[]
-        for row in response_list:
-            RideID=int(row[0])
-            CreatedBy=str(row[1])
-            Users=str(row[2])
-            Timestamp=row[3]
-            Source=int(row[4])
-            Destination=int(row[5])
-            print(list([RideID,CreatedBy,Users,Timestamp,Source,Destination]))
-            if(Source==source and Destination==destination):
-                #filtered_list.append(list([RideID,CreatedBy,Users,Timestamp,Source,Destination]))
-                filtered_list.append(json.dump({"rideId" : int(RideID),"username":str(CreatedBy),"timestamp":str(Timestamp)},default=str))
-        print('filtered_list ',filtered_list)
-        #return Response(json.dumps(filtered_list,default=str),status=200)
-        return Response(filtered_list,status=200)
-    except:
-        print('EXCEPT ERROR in Task 5 !!')
-"""
 
 #TASK 3 DONE
 @app.route('/api/v1/rides',methods=['POST'])
@@ -223,7 +193,7 @@ def addRides():
             return Response(json.dumps(dict()),status=400)    
         
 
-        url_request = "http://localhost:80/api/v1/db/write"
+        url_request = "http://localhost:82/api/v1/db/write"
         insert_data_request=str(username)+';'+str(timestamp)+';'+str(source)+';'+str(destination)
         #print('insert data request')
         data_request = {'table' : 'ride', 'insert': str(insert_data_request), 'column':6 }
@@ -239,6 +209,7 @@ def addRides():
         print('EXCEPT TASK 3 ERROR !!')
         return Response(json.dumps(dict()),status=500)        
 
+"""
 ##TASK 1 DONE
 @app.route('/api/v1/users',methods=['PUT'])
 def addUser():
@@ -248,12 +219,6 @@ def addUser():
         password = request.json['password']
         #print('password received ',password)
 
-        '''
-        if(username==None or password==None):
-            content={'Username or Password field empty !!'}
-            print(content)
-            return Response(content,status=400)
-        '''
         if(len(password)!=40 or all(c in string.hexdigits for c in password)==False):
             print('Password Invalid !!')
             return Response(json.dumps(dict()), status=400)
@@ -286,9 +251,9 @@ def addUser():
     except:
         print('EXCEPT TASK 1 ERROR')
         return Response(json.dumps(dict()),status=500)        
+"""
 
-
-
+"""
 #TASK 2 
 @app.route('/api/v1/users/<username>',methods=['DELETE'])
 def deleteUser(username):
@@ -316,15 +281,7 @@ def deleteUser(username):
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
 
     return Response(json.dumps(dict()),status=200)
-
-    '''
-    print('username received ',username)
-    query_result = User.query.filter(User.username == username)
-    print('Query type ',query_result.all())
-    query_result.delete()
-    db.session.commit()
-    return Response(json.dumps(dict()),status=200)
-    '''
+"""
 
 
 @app.route('/api/v1/rides/<rideID_query>',methods=['GET'])
@@ -332,7 +289,7 @@ def readRideID(rideID_query):
     print('\n\nGETTING RIDE DETAILS')
     rideID_query=int(rideID_query)
     print('ride id ',rideID_query)
-    url_request = "http://localhost:80/api/v1/db/read"
+    url_request = "http://localhost:82/api/v1/db/read"
     data_request = {'table' : 'ride', 'columns': '', 'where':'' }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -361,7 +318,7 @@ def deleteRideID(rideID_query):
     rideID_query=int(rideID_query)
     print('ride id',rideID_query)
 
-    url_request = "http://localhost:80/api/v1/db/write"
+    url_request = "http://localhost:82/api/v1/db/write"
     data_request = {'table' : 'ride', 'delete' : str(rideID_query) }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -374,18 +331,65 @@ def updateRideUsers(rideID_query):
     rideID_query=int(rideID_query)
     username = str(request.json['username'])
     print('ride id ',rideID_query,' username ',username)
-    url_request = "http://localhost:80/api/v1/db/write"
+    url_request = "http://localhost:82/api/v1/db/write"
     data_request = {'table' : 'ride', 'update' : str(rideID_query)+';'+str(username) }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
 
     return Response(json.dumps(dict()),status=200)
 
+"""
+#Assignment 2 task
+@app.route('/api/v1/users',methods=['GET'])
+def readAllUsers():
+    try:
+
+        url_request = "http://localhost:80/api/v1/db/read"
+        data_request = {'table' : 'user', 'columns': '', 'where':'' }
+        headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
+        response_list=response.json()
+        response_list = [str(i[1]) for i in response_list]
+        print('response list ',response_list)
+
+        if len(response_list)==0:
+            return '',204
+        else:
+            return Response(json.dumps(response_list,default=str),status=200)
+
+    except:
+        print('EXCEPT ERROR IN READ ALL USERS !!')
+        return Response(json.dumps(dict()),status=400)   
+"""
+
+
+#Assignment 2 Task
+@app.route('/api/v1/db/clear',methods=['POST'])
+def clearTables():
+    try:
+        """
+        url_request = "http://localhost:80/api/v1/db/write"
+        data_request = {'table' : 'user', 'clear' : 'placeholder text' }
+        headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
+        """
+
+        url_request = "http://localhost:82/api/v1/db/write"
+        data_request = {'table' : 'ride', 'clear' : 'placeholder text' }
+        headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
 
 
 
+        return Response(json.dumps(dict()),status=200)
 
 
+    except:
+        print('EXCEPT ERROR IN CLEAR TABLES !!')
+        return Response(json.dumps(dict()),status=400) 
+
+
+    
 
 @app.route('/api/v1/db/read',methods=['POST'])
 def dbRead():
@@ -434,6 +438,10 @@ def dbWrite():
                 User.query.filter(User.username == username).delete()
                 db.session.commit()
 
+            if 'clear' in request.json:
+                db.session.query(User).delete()
+                db.session.commit()
+
 
         if(table=="ride"):
             if 'insert' in request.json:
@@ -466,6 +474,10 @@ def dbWrite():
                 delete=request.json['delete']
                 RideID=int(delete)
                 Ride.query.filter(Ride.RideID == RideID).delete()
+                db.session.commit()
+
+            if 'clear' in request.json:
+                db.session.query(Ride).delete()
                 db.session.commit()
 
         return Response(json.dumps(dict()),status=200)

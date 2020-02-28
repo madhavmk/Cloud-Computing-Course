@@ -381,11 +381,53 @@ def updateRideUsers(rideID_query):
 
     return Response(json.dumps(dict()),status=200)
 
+#Assignment 2 task
+@app.route('/api/v1/users',methods=['GET'])
+def readAllUsers():
+    try:
+
+        url_request = "http://localhost:80/api/v1/db/read"
+        data_request = {'table' : 'user', 'columns': '', 'where':'' }
+        headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
+        response_list=response.json()
+        response_list = [str(i[1]) for i in response_list]
+        print('response list ',response_list)
+
+        if len(response_list)==0:
+            return '',204
+        else:
+            return Response(json.dumps(response_list,default=str),status=200)
+
+    except:
+        print('EXCEPT ERROR IN READ ALL USERS !!')
+        return Response(json.dumps(dict()),status=400)   
+
+#Assignment 2 Task
+@app.route('/api/v1/db/clear',methods=['POST'])
+def clearTables():
+    try:
+        url_request = "http://localhost:80/api/v1/db/write"
+        data_request = {'table' : 'user', 'clear' : 'placeholder text' }
+        headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
+
+        url_request = "http://localhost:80/api/v1/db/write"
+        data_request = {'table' : 'ride', 'clear' : 'placeholder text' }
+        headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
 
 
 
+        return Response(json.dumps(dict()),status=200)
 
 
+    except:
+        print('EXCEPT ERROR IN CLEAR TABLES !!')
+        return Response(json.dumps(dict()),status=400) 
+
+
+    
 
 @app.route('/api/v1/db/read',methods=['POST'])
 def dbRead():
@@ -434,6 +476,10 @@ def dbWrite():
                 User.query.filter(User.username == username).delete()
                 db.session.commit()
 
+            if 'clear' in request.json:
+                db.session.query(User).delete()
+                db.session.commit()
+
 
         if(table=="ride"):
             if 'insert' in request.json:
@@ -466,6 +512,10 @@ def dbWrite():
                 delete=request.json['delete']
                 RideID=int(delete)
                 Ride.query.filter(Ride.RideID == RideID).delete()
+                db.session.commit()
+
+            if 'clear' in request.json:
+                db.session.query(Ride).delete()
                 db.session.commit()
 
         return Response(json.dumps(dict()),status=200)

@@ -1,0 +1,6 @@
+sudo docker ps 
+
+sudo docker build -t postgres:latest .
+
+docker images
+
