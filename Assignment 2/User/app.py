@@ -10,6 +10,8 @@ import pytz
 from pytz import timezone
 import requests
 import ast
+#Install psycopg2 or psycopg2-binary
+#Install waitress
 
 
 

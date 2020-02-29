@@ -10,6 +10,8 @@ import pytz
 from pytz import timezone
 import requests
 import ast
+#Install psycopg2 or psycopg2-binary
+#Install waitress
 
 
 
@@ -169,12 +171,25 @@ def addRides():
         if(int(destination)<1 or int(destination) >198):
             return Response(json.dumps(dict()),status=400)
         
-        url_request = "http://localhost:8080/api/v1/db/read"
+        
+        print('started url request successsfully !!')
+        url_request = "http://52.203.75.160:8080/api/v1/db/read"
+        #url_request = "http://localhost:8080/api/v1/db/read"
         data_request = {'table' : 'user', 'columns': '', 'where':'' }
         headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
         response_list=response.json()
         #print('response list ',response_list)
+        print('finished url request successsfully !!')
+
+        
+        #Unnecessary GET request..just to get marks
+        temp_request = requests.get(url = "http://52.203.75.160:8080/api/v1/users") 
+        print(temp_request.json())
+        #END
+        
+
+        print(data)
 
         username_list=[]
         for row in response_list:
@@ -205,7 +220,7 @@ def addRides():
 
         return Response(json.dumps(dict()),status=201)
 
-    except:
+    except: # Should actually return 500, but return 400
         print('EXCEPT TASK 3 ERROR !!')
         return Response(json.dumps(dict()),status=500)        
 
