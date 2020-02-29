@@ -189,7 +189,7 @@ def addRides():
         #END
         
 
-        print(data)
+        #print(data)
 
         username_list=[]
         for row in response_list:
