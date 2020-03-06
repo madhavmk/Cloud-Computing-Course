@@ -1,13 +1,13 @@
-from python:3-onbuild
+FROM rides:latest
 
-RUN apk add --no-cache python3-dev
+EXPOSE 8000:8000
 
-RUN pip3 install --upgrade pip
+ENV POSTGRES_USER postgres
+ENV POSTGRES_PASSWORD Iusepostgres@321
+ENV POSTGRES_DB cloud_computing_assignment_ride
 
-WORKDIR /app
+ENV TEAM_NAME CC_0227_1123_1139_1526
 
-COPY . /app
+RUN git clone http://github.com/madhavmk/Cloud-Computing-Course
 
-CMD ["python","waitress_server.py"]
-
-EXPOSE 5000
+CMD python3 Cloud-Computing-Course/Assignment\ 2/Ride/waitress_server.py
