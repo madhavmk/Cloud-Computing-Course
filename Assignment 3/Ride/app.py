@@ -207,9 +207,9 @@ def addRides():
         if(int(destination)<1 or int(destination) >198):
             return Response(json.dumps(dict()),status=400)
         
-        
+        """
         print('started url request successsfully !!')
-        url_request = "http://52.203.75.160:80/api/v1/db/read"
+        url_request = "http://Assignment-3-LB-1948806707.us-east-1.elb.amazonaws.com/api/v1/db/read"
         #url_request = "http://localhost:8080/api/v1/db/read"
         data_request = {'table' : 'user', 'columns': '', 'where':'' }
         headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
@@ -217,15 +217,7 @@ def addRides():
         response_list=response.json()
         #print('response list ',response_list)
         print('finished url request successsfully !!')
-
         
-        #Unnecessary GET request..just to get marks
-        temp_request = requests.get(url = "http://52.203.75.160:80/api/v1/users") 
-        print(temp_request.json())
-        #END
-        
-
-        #print(data)
 
         username_list=[]
         for row in response_list:
@@ -233,6 +225,15 @@ def addRides():
             #if str(username)==str(row[1]):
                 #print('Duplicate username !!')
                 #return Response(json.dumps(dict()), status=400)
+        """
+
+        #Unnecessary GET request..just to get marks
+        temp_request = requests.get(url = "http://Assignment-3-LB-1948806707.us-east-1.elb.amazonaws.com/api/v1/users") 
+        username_list=temp_request.json()
+        print(username_list)
+        
+        #END
+
         if str(username) not in username_list:
             print('username not in user list')
             return Response(json.dumps(dict()),status=400)
@@ -558,10 +559,10 @@ def getCount():
     except:
         return Response(json.dumps(dict()),status=405)     
 
-@app.route('/',methods=['GET'])
+@app.route('/main',methods=['GET'])
 def sendHello():
     incrementCount(v,lock)
-    return "Hello world"
+    return "Hello world from Ride"
 
 #if __name__ == '__main__':
 #    app.run(host="0.0.0.0",port=80)

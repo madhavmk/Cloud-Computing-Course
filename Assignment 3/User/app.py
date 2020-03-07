@@ -524,10 +524,10 @@ def getCount():
         return Response(json.dumps(dict()),status=405)        
 
 
-@app.route('/',methods=['GET'])
+@app.route('/api/v1/users/main',methods=['GET'])
 def sendHello():
     incrementCount(v,lock)
-    return "Hello world"
+    return "Hello from User"
 
 #if __name__ == '__main__':
 #    app.run(host="0.0.0.0",port=80)
