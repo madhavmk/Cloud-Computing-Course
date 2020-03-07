@@ -373,6 +373,8 @@ def updateRideUsers(rideID_query):
 def readAllUsers():
     incrementCount(v,lock)
     try:
+        print(request.headers['Origin'])
+
 
         url_request = "http://localhost:80/api/v1/db/read"
         data_request = {'table' : 'user', 'columns': '', 'where':'' }

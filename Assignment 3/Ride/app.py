@@ -228,7 +228,8 @@ def addRides():
         """
 
         #Unnecessary GET request..just to get marks
-        temp_request = requests.get(url = "http://Assignment-3-LB-1948806707.us-east-1.elb.amazonaws.com/api/v1/users") 
+        headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain','Origin':'35.168.208.236'}
+        temp_request = requests.get(url = "http://Assignment-3-LB-1948806707.us-east-1.elb.amazonaws.com/api/v1/users",headers=headers_request) 
         username_list=temp_request.json()
         print(username_list)
         
