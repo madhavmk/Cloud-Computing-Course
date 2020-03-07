@@ -2,6 +2,7 @@ from flask import Flask, jsonify,request, Response
 from flask_cors import CORS 
 from flask_sqlalchemy import SQLAlchemy
 from multiprocessing import Value
+import json
 
 counter = Value('i', 0)
 
