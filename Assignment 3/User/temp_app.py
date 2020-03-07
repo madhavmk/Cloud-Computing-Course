@@ -17,7 +17,7 @@ def getCount():
         return Response(json.dumps(dict()),status=405)
 
 @app.route('/api/v1/_count',methods=['DELETE'])
-def getCount():
+def deleteCount():
     try:
         with counter.get_lock():
             counter.value=0
