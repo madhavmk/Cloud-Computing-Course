@@ -228,7 +228,7 @@ def addUser():
             print('Password Invalid !!')
             return Response(json.dumps(dict()), status=400)
 
-        url_request = "http://localhost:8080/api/v1/db/read"
+        url_request = "http://localhost:80/api/v1/db/read"
         data_request = {'table' : 'user', 'columns': '', 'where':'' }
         headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -244,7 +244,7 @@ def addUser():
 
 
 
-        url_request = "http://localhost:8080/api/v1/db/write"
+        url_request = "http://localhost:80/api/v1/db/write"
         insert_data_request=str(username)+';'+str(password)
         data_request = {'table' : 'user', 'insert': str(insert_data_request), 'column':6 }
         headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
@@ -266,7 +266,7 @@ def deleteUser(username):
     username=str(username)
     print('username ',username)
 
-    url_request = "http://localhost:8080/api/v1/db/read"
+    url_request = "http://localhost:80/api/v1/db/read"
     data_request = {'table' : 'user', 'columns': '', 'where':'' }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -280,7 +280,7 @@ def deleteUser(username):
         print('username NOT present')
         return Response(json.dumps(dict()), status=400)
 
-    url_request = "http://localhost:8080/api/v1/db/write"
+    url_request = "http://localhost:80/api/v1/db/write"
     data_request = {'table' : 'user', 'delete' : username }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -356,7 +356,7 @@ def updateRideUsers(rideID_query):
 def readAllUsers():
     try:
 
-        url_request = "http://localhost:8080/api/v1/db/read"
+        url_request = "http://localhost:80/api/v1/db/read"
         data_request = {'table' : 'user', 'columns': '', 'where':'' }
         headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -377,7 +377,7 @@ def readAllUsers():
 @app.route('/api/v1/db/clear',methods=['POST'])
 def clearTables():
     try:
-        url_request = "http://localhost:8080/api/v1/db/write"
+        url_request = "http://localhost:80/api/v1/db/write"
         data_request = {'table' : 'user', 'clear' : 'placeholder text' }
         headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)

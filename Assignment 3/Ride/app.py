@@ -10,6 +10,9 @@ import pytz
 from pytz import timezone
 import requests
 import ast
+
+from multiprocessing import Value
+
 #Install psycopg2 or psycopg2-binary
 #Install waitress
 
@@ -22,6 +25,8 @@ db=SQLAlchemy(app)
 CORS(app)
 app.debug = True
 print('Connected to DB !!')
+
+counter = Value('i', 0)
 
 class Area(db.Model):
 
@@ -92,6 +97,23 @@ try:
 except:
     pass
 
+#Task for Assignment 3
+@app.route('/api/v1/rides/count',methods=['GET'])
+def rideCount():
+    try:
+        url_request = "http://localhost:80/api/v1/db/read"
+        data_request = {'table' : 'ride', 'columns': '', 'where':'' }
+        headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
+        response_list=response.json()
+        print('Assignment 3 Ride task response list :',response_list)
+        return(Response(json.dumps(len(response_list)),status=200))
+
+    except:
+        print('EXCEPT ERROR IN Rides Assignment 3 task !!')
+        return Response(json.dumps(dict()),status=500)
+
+
 #task 4 done
 @app.route('/api/v1/rides',methods=['GET'])
 def readRide():
@@ -107,7 +129,7 @@ def readRide():
 
 
 
-        url_request = "http://localhost:8000/api/v1/db/read"
+        url_request = "http://localhost:80/api/v1/db/read"
         data_request = {'table' : 'ride', 'columns': '', 'where':'' }
         headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -173,7 +195,7 @@ def addRides():
         
         
         print('started url request successsfully !!')
-        url_request = "http://52.203.75.160:8080/api/v1/db/read"
+        url_request = "http://52.203.75.160:80/api/v1/db/read"
         #url_request = "http://localhost:8080/api/v1/db/read"
         data_request = {'table' : 'user', 'columns': '', 'where':'' }
         headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
@@ -184,7 +206,7 @@ def addRides():
 
         
         #Unnecessary GET request..just to get marks
-        temp_request = requests.get(url = "http://52.203.75.160:8080/api/v1/users") 
+        temp_request = requests.get(url = "http://52.203.75.160:80/api/v1/users") 
         print(temp_request.json())
         #END
         
@@ -208,7 +230,7 @@ def addRides():
             return Response(json.dumps(dict()),status=400)    
         
 
-        url_request = "http://localhost:8000/api/v1/db/write"
+        url_request = "http://localhost:80/api/v1/db/write"
         insert_data_request=str(username)+';'+str(timestamp)+';'+str(source)+';'+str(destination)
         #print('insert data request')
         data_request = {'table' : 'ride', 'insert': str(insert_data_request), 'column':6 }
@@ -304,7 +326,7 @@ def readRideID(rideID_query):
     print('\n\nGETTING RIDE DETAILS')
     rideID_query=int(rideID_query)
     print('ride id ',rideID_query)
-    url_request = "http://localhost:8000/api/v1/db/read"
+    url_request = "http://localhost:80/api/v1/db/read"
     data_request = {'table' : 'ride', 'columns': '', 'where':'' }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -333,7 +355,7 @@ def deleteRideID(rideID_query):
     rideID_query=int(rideID_query)
     print('ride id',rideID_query)
 
-    url_request = "http://localhost:8000/api/v1/db/write"
+    url_request = "http://localhost:80/api/v1/db/write"
     data_request = {'table' : 'ride', 'delete' : str(rideID_query) }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -346,7 +368,7 @@ def updateRideUsers(rideID_query):
     rideID_query=int(rideID_query)
     username = str(request.json['username'])
     print('ride id ',rideID_query,' username ',username)
-    url_request = "http://localhost:8000/api/v1/db/write"
+    url_request = "http://localhost:80/api/v1/db/write"
     data_request = {'table' : 'ride', 'update' : str(rideID_query)+';'+str(username) }
     headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
@@ -389,7 +411,7 @@ def clearTables():
         response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
         """
 
-        url_request = "http://localhost:8000/api/v1/db/write"
+        url_request = "http://localhost:80/api/v1/db/write"
         data_request = {'table' : 'ride', 'clear' : 'placeholder text' }
         headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
