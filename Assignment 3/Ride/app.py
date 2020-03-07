@@ -11,11 +11,22 @@ from pytz import timezone
 import requests
 import ast
 
-from multiprocessing import Value
-
+from multiprocessing import Process, Value, Lock
 #Install psycopg2 or psycopg2-binary
 #Install waitress
 
+
+
+def incrementCount(val, lock):
+    with lock:
+        val.value += 1
+def resetCount(val,lock):
+    with lock:
+        val.value = 0
+
+
+v = Value('i', 0)
+lock = Lock()
 
 
 app=Flask(__name__)
@@ -100,6 +111,7 @@ except:
 #Task for Assignment 3
 @app.route('/api/v1/rides/count',methods=['GET'])
 def rideCount():
+    incrementCount(v,lock)
     try:
         url_request = "http://localhost:80/api/v1/db/read"
         data_request = {'table' : 'ride', 'columns': '', 'where':'' }
@@ -117,6 +129,7 @@ def rideCount():
 #task 4 done
 @app.route('/api/v1/rides',methods=['GET'])
 def readRide():
+    incrementCount(v,lock)
     try:
         try:
             source = int(request.args.get('source'))
@@ -173,6 +186,7 @@ def readRide():
 #TASK 3 DONE
 @app.route('/api/v1/rides',methods=['POST'])
 def addRides():
+    incrementCount(v,lock)
     try:
         username = request.json['created_by']
         print('username received ',username)
@@ -323,6 +337,9 @@ def deleteUser(username):
 
 @app.route('/api/v1/rides/<rideID_query>',methods=['GET'])
 def readRideID(rideID_query):
+
+    incrementCount(v,lock)
+
     print('\n\nGETTING RIDE DETAILS')
     rideID_query=int(rideID_query)
     print('ride id ',rideID_query)
@@ -351,6 +368,9 @@ def readRideID(rideID_query):
 #Task 7
 @app.route('/api/v1/rides/<rideID_query>',methods=['DELETE'])
 def deleteRideID(rideID_query):
+
+    incrementCount(v,lock)
+
     print('\n\n DELETING RIDE !')
     rideID_query=int(rideID_query)
     print('ride id',rideID_query)
@@ -364,6 +384,9 @@ def deleteRideID(rideID_query):
 
 @app.route('/api/v1/rides/<rideID_query>',methods=['POST'])
 def updateRideUsers(rideID_query):
+
+    incrementCount(v,lock)
+
     print('UPDATING RIDE')
     rideID_query=int(rideID_query)
     username = str(request.json['username'])
@@ -403,6 +426,7 @@ def readAllUsers():
 #Assignment 2 Task
 @app.route('/api/v1/db/clear',methods=['POST'])
 def clearTables():
+    incrementCount(v,lock)
     try:
         """
         url_request = "http://localhost:80/api/v1/db/write"
@@ -520,10 +544,23 @@ def dbWrite():
         return Response(json.dumps(dict()),status=200)
     except:
         print('EXCEPT ERROR IN WRITE !!')
-        return Response(json.dumps(dict()),status=500)        
+        return Response(json.dumps(dict()),status=500)   
+
+@app.route('/api/v1/_count',methods=['GET','DELETE'])
+def getCount():
+    try:
+        if request.method=='GET':
+            return Response(json.dumps(v.value),status=200)
+        if request.method=='DELETE':
+            resetCount(v,lock)
+            return Response(json.dumps(dict()),status=200)
+
+    except:
+        return Response(json.dumps(dict()),status=405)     
 
 @app.route('/',methods=['GET'])
 def sendHello():
+    incrementCount(v,lock)
     return "Hello world"
 
 #if __name__ == '__main__':

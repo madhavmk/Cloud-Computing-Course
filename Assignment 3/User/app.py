@@ -10,9 +10,22 @@ import pytz
 from pytz import timezone
 import requests
 import ast
+
+from multiprocessing import Process, Value, Lock
 #Install psycopg2 or psycopg2-binary
 #Install waitress
 
+
+def incrementCount(val, lock):
+    with lock:
+        val.value += 1
+def resetCount(val,lock):
+    with lock:
+        val.value = 0
+
+
+v = Value('i', 0)
+lock = Lock()
 
 
 app=Flask(__name__)
@@ -217,6 +230,7 @@ def addRides():
 ##TASK 1 DONE
 @app.route('/api/v1/users',methods=['PUT'])
 def addUser():
+    incrementCount(v,lock)
     try:
         username = request.json['username']
         #print('username received ',username)
@@ -262,6 +276,9 @@ def addUser():
 #TASK 2 
 @app.route('/api/v1/users/<username>',methods=['DELETE'])
 def deleteUser(username):
+
+    incrementCount(v,lock)
+
     print('\n\nDElETING USER')
     username=str(username)
     print('username ',username)
@@ -354,6 +371,7 @@ def updateRideUsers(rideID_query):
 #Assignment 2 task
 @app.route('/api/v1/users',methods=['GET'])
 def readAllUsers():
+    incrementCount(v,lock)
     try:
 
         url_request = "http://localhost:80/api/v1/db/read"
@@ -376,6 +394,7 @@ def readAllUsers():
 #Assignment 2 Task
 @app.route('/api/v1/db/clear',methods=['POST'])
 def clearTables():
+    incrementCount(v,lock)
     try:
         url_request = "http://localhost:80/api/v1/db/write"
         data_request = {'table' : 'user', 'clear' : 'placeholder text' }
@@ -397,6 +416,7 @@ def clearTables():
 
 @app.route('/api/v1/db/read',methods=['POST'])
 def dbRead():
+
     table=request.json['table']
     columns=request.json['columns']
     where=request.json['where']
@@ -487,10 +507,26 @@ def dbWrite():
         return Response(json.dumps(dict()),status=200)
     except:
         print('EXCEPT ERROR IN WRITE !!')
-        return Response(json.dumps(dict()),status=500)        
+        return Response(json.dumps(dict()),status=500)
+
+
+
+@app.route('/api/v1/_count',methods=['GET','DELETE'])
+def getCount():
+    try:
+        if request.method=='GET':
+            return Response(json.dumps(v.value),status=200)
+        if request.method=='DELETE':
+            resetCount(v,lock)
+            return Response(json.dumps(dict()),status=200)
+
+    except:
+        return Response(json.dumps(dict()),status=405)        
+
 
 @app.route('/',methods=['GET'])
 def sendHello():
+    incrementCount(v,lock)
     return "Hello world"
 
 #if __name__ == '__main__':
