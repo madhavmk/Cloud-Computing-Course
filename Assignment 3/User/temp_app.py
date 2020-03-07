@@ -9,14 +9,14 @@ app=Flask(__name__)
 app.debug = True
 print('Started User Server !!')
 
-@app.route('/api/v1/_count',methods=['GET']):
+@app.route('/api/v1/_count',methods=['GET'])
 def getCount():
     try:
         return Response(json.dumps(count=counter.value),status=200)
     except:
         return Response(json.dumps(dict()),status=405)
 
-@app.route('/api/v1/_count',methods=['DELETE']):
+@app.route('/api/v1/_count',methods=['DELETE'])
 def getCount():
     try:
         with counter.get_lock():
