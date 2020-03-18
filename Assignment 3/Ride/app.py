@@ -552,7 +552,8 @@ def dbWrite():
 def getCount():
     try:
         if request.method=='GET':
-            return Response(json.dumps(v.value),status=200)
+            return Response(json.dumps(list([v.value]),default=str),status=200)
+            #return Response(json.dumps(v.value),status=200)
         if request.method=='DELETE':
             resetCount(v,lock)
             return Response(json.dumps(dict()),status=200)
