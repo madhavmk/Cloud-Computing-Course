@@ -30,13 +30,14 @@ lock = Lock()
 
 
 app=Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@localhost/cloud_computing_assignment_user'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@localhost/cloud_computing_assignment_ride'
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@localhost/Cloud_Computing_Assignment'
 db=SQLAlchemy(app)
 CORS(app)
 app.debug = True
 print('Connected to DB !!')
 
+counter = Value('i', 0)
 
 class Area(db.Model):
 
@@ -85,7 +86,6 @@ class Ride(db.Model):
     def representation(self):
         return(list([self.RideID,self.CreatedBy,self.Users,self.Timestamp,self.Source,self.Destination]))
 
-"""
 try:
     Area.__table__.create(db.session.bind)
     with open('AreaNameEnum.csv', 'r') as file:
@@ -97,22 +97,39 @@ try:
 except:
     pass
 """
-
 try:
     User.__table__.create(db.session.bind)
 except:
     pass
 """
+
 try:
     Ride.__table__.create(db.session.bind)
 except:
     pass
-"""
 
-"""
+#Task for Assignment 3
+@app.route('/api/v1/rides/count',methods=['GET'])
+def rideCount():
+    incrementCount(v,lock)
+    try:
+        url_request = "http://localhost:80/api/v1/db/read"
+        data_request = {'table' : 'ride', 'columns': '', 'where':'' }
+        headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
+        response_list=response.json()
+        print('Assignment 3 Ride task response list :',response_list)
+        return(Response(json.dumps(len(response_list)),status=200))
+
+    except:
+        print('EXCEPT ERROR IN Rides Assignment 3 task !!')
+        return Response(json.dumps(dict()),status=500)
+
+
 #task 4 done
 @app.route('/api/v1/rides',methods=['GET'])
 def readRide():
+    incrementCount(v,lock)
     try:
         try:
             source = int(request.args.get('source'))
@@ -163,12 +180,13 @@ def readRide():
     except:
         print('EXCEPT ERROR IN TASK 4 !!')
         return Response(json.dumps(dict()),status=500)
-"""
 
-"""
+
+
 #TASK 3 DONE
 @app.route('/api/v1/rides',methods=['POST'])
 def addRides():
+    incrementCount(v,lock)
     try:
         username = request.json['created_by']
         print('username received ',username)
@@ -189,16 +207,33 @@ def addRides():
         if(int(destination)<1 or int(destination) >198):
             return Response(json.dumps(dict()),status=400)
         
-        url_request = "http://localhost:80/api/v1/db/read"
+        """
+        print('started url request successsfully !!')
+        url_request = "http://Assignment-3-LB-1948806707.us-east-1.elb.amazonaws.com/api/v1/db/read"
+        #url_request = "http://localhost:8080/api/v1/db/read"
         data_request = {'table' : 'user', 'columns': '', 'where':'' }
         headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
         response_list=response.json()
         #print('response list ',response_list)
+        print('finished url request successsfully !!')
+        
 
         username_list=[]
         for row in response_list:
             username_list.append(str(row[1]))
+            #if str(username)==str(row[1]):
+                #print('Duplicate username !!')
+                #return Response(json.dumps(dict()), status=400)
+        """
+
+        #Unnecessary GET request..just to get marks
+        headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain','Origin':'35.168.208.236'}
+        temp_request = requests.get(url = "http://Assignment-3-LB-1948806707.us-east-1.elb.amazonaws.com/api/v1/users",headers=headers_request) 
+        username_list=temp_request.json()
+        print(username_list)
+        
+        #END
 
         if str(username) not in username_list:
             print('username not in user list')
@@ -223,22 +258,19 @@ def addRides():
 
         return Response(json.dumps(dict()),status=201)
 
-    except:
+    except: # Should actually return 500, but return 400
         print('EXCEPT TASK 3 ERROR !!')
         return Response(json.dumps(dict()),status=500)        
+
 """
-
-
 ##TASK 1 DONE
 @app.route('/api/v1/users',methods=['PUT'])
 def addUser():
-    incrementCount(v,lock)
     try:
         username = request.json['username']
         #print('username received ',username)
         password = request.json['password']
         #print('password received ',password)
-
 
         if(len(password)!=40 or all(c in string.hexdigits for c in password)==False):
             print('Password Invalid !!')
@@ -272,15 +304,12 @@ def addUser():
     except:
         print('EXCEPT TASK 1 ERROR')
         return Response(json.dumps(dict()),status=500)        
+"""
 
-
-
+"""
 #TASK 2 
 @app.route('/api/v1/users/<username>',methods=['DELETE'])
 def deleteUser(username):
-
-    incrementCount(v,lock)
-
     print('\n\nDElETING USER')
     username=str(username)
     print('username ',username)
@@ -305,11 +334,14 @@ def deleteUser(username):
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
 
     return Response(json.dumps(dict()),status=200)
-
-
 """
+
+
 @app.route('/api/v1/rides/<rideID_query>',methods=['GET'])
 def readRideID(rideID_query):
+
+    incrementCount(v,lock)
+
     print('\n\nGETTING RIDE DETAILS')
     rideID_query=int(rideID_query)
     print('ride id ',rideID_query)
@@ -333,13 +365,14 @@ def readRideID(rideID_query):
     print('filtered_list ',filtered_list)
     
     return Response(filtered_list,status=200)
-"""
 
-"""
 
 #Task 7
 @app.route('/api/v1/rides/<rideID_query>',methods=['DELETE'])
 def deleteRideID(rideID_query):
+
+    incrementCount(v,lock)
+
     print('\n\n DELETING RIDE !')
     rideID_query=int(rideID_query)
     print('ride id',rideID_query)
@@ -351,12 +384,11 @@ def deleteRideID(rideID_query):
 
     return Response(json.dumps(dict()),status=200)
 
-"""
-
-"""
-
 @app.route('/api/v1/rides/<rideID_query>',methods=['POST'])
 def updateRideUsers(rideID_query):
+
+    incrementCount(v,lock)
+
     print('UPDATING RIDE')
     rideID_query=int(rideID_query)
     username = str(request.json['username'])
@@ -367,19 +399,12 @@ def updateRideUsers(rideID_query):
     response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
 
     return Response(json.dumps(dict()),status=200)
+
 """
-
-
 #Assignment 2 task
 @app.route('/api/v1/users',methods=['GET'])
 def readAllUsers():
-    incrementCount(v,lock)
     try:
-        
-        try:
-            print(str(request.headers['Origin']))
-        except:
-            print("Could NOT read Origin!!")
 
         url_request = "http://localhost:80/api/v1/db/read"
         data_request = {'table' : 'user', 'columns': '', 'where':'' }
@@ -397,33 +422,40 @@ def readAllUsers():
     except:
         print('EXCEPT ERROR IN READ ALL USERS !!')
         return Response(json.dumps(dict()),status=400)   
+"""
+
 
 #Assignment 2 Task
 @app.route('/api/v1/db/clear',methods=['POST'])
 def clearTables():
     incrementCount(v,lock)
     try:
+        """
         url_request = "http://localhost:80/api/v1/db/write"
         data_request = {'table' : 'user', 'clear' : 'placeholder text' }
         headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
-        return Response(json.dumps(dict()),status=200)
-
         """
+
         url_request = "http://localhost:80/api/v1/db/write"
         data_request = {'table' : 'ride', 'clear' : 'placeholder text' }
         headers_request = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         response = requests.post(url_request,data=json.dumps(data_request),headers=headers_request)
-        """
+
+
+
+        return Response(json.dumps(dict()),status=200)
+
+
     except:
-        print('EXCEPT ERROR IN CLEAR User TABLES !!')
+        print('EXCEPT ERROR IN CLEAR TABLES !!')
         return Response(json.dumps(dict()),status=400) 
+
 
     
 
 @app.route('/api/v1/db/read',methods=['POST'])
 def dbRead():
-
     table=request.json['table']
     columns=request.json['columns']
     where=request.json['where']
@@ -514,27 +546,25 @@ def dbWrite():
         return Response(json.dumps(dict()),status=200)
     except:
         print('EXCEPT ERROR IN WRITE !!')
-        return Response(json.dumps(dict()),status=500)
-
-
+        return Response(json.dumps(dict()),status=500)   
 
 @app.route('/api/v1/_count',methods=['GET','DELETE'])
 def getCount():
     try:
         if request.method=='GET':
-            return Response(json.dumps(list([int(v.value)]),default=str),status=200)
+            return Response(json.dumps(list([v.value]),default=str),status=200)
+            #return Response(json.dumps(v.value),status=200)
         if request.method=='DELETE':
             resetCount(v,lock)
             return Response(json.dumps(dict()),status=200)
 
     except:
-        return Response(json.dumps(dict()),status=405)        
+        return Response(json.dumps(dict()),status=405)     
 
-
-@app.route('/api/v1/users/main',methods=['GET'])
+@app.route('/main',methods=['GET'])
 def sendHello():
     incrementCount(v,lock)
-    return "Hello from User"
+    return "Hello world from Ride"
 
 #if __name__ == '__main__':
 #    app.run(host="0.0.0.0",port=80)

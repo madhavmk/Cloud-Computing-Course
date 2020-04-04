@@ -16,7 +16,6 @@ from multiprocessing import Process, Value, Lock
 #Install waitress
 
 
-
 def incrementCount(val, lock):
     with lock:
         val.value += 1
@@ -36,7 +35,6 @@ db=SQLAlchemy(app)
 CORS(app)
 app.debug = True
 print('Connected to DB !!')
-
 
 class Area(db.Model):
 
@@ -522,7 +520,7 @@ def dbWrite():
 def getCount():
     try:
         if request.method=='GET':
-            return Response(json.dumps(list([int(v.value)]),default=str),status=200)
+            return Response(json.dumps(list([v.value]),default=str),status=200)
         if request.method=='DELETE':
             resetCount(v,lock)
             return Response(json.dumps(dict()),status=200)
