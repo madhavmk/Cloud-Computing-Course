@@ -30,7 +30,6 @@ lock = Lock()
 
 
 app=Flask(__name__)
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@localhost/cloud_computing_assignment_ride'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@52.73.30.120/Cloud_Computing_Assignment'
 db=SQLAlchemy(app)
 CORS(app)
@@ -94,18 +93,22 @@ try:
             new_area = Area(row['Area No'],row['Area Name'])
             db.session.add(new_area)
     db.session.commit()
+
+    print('Created Area table')
 except:
     pass
 
 
 try:
     User.__table__.create(db.session.bind)
+    print('Created User table')
 except:
     pass
 
 
 try:
     Ride.__table__.create(db.session.bind)
+    print('Created Ride table')
 except:
     pass
 
