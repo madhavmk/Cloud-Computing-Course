@@ -15,6 +15,19 @@ from multiprocessing import Process, Value, Lock
 #Install psycopg2 or psycopg2-binary
 #Install waitress
 
+import pika
+import uuid
+import pickle
+
+###########################################################
+
+app=Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@52.73.30.120/Cloud_Computing_Assignment'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@localhost/Cloud_Computing_Assignment'
+db=SQLAlchemy(app)
+CORS(app)
+app.debug = True
+print('Connected to DB !!')
 
 
 def incrementCount(val, lock):
@@ -24,20 +37,14 @@ def resetCount(val,lock):
     with lock:
         val.value = 0
 
-
 v = Value('i', 0)
 lock = Lock()
 
-
-app=Flask(__name__)
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@localhost/cloud_computing_assignment_ride'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@52.73.30.120/Cloud_Computing_Assignment'
-db=SQLAlchemy(app)
-CORS(app)
-app.debug = True
-print('Connected to DB !!')
-
 counter = Value('i', 0)
+
+
+##########################################################
+
 
 class Area(db.Model):
 
@@ -109,6 +116,150 @@ try:
 except:
     pass
 
+#################################################################
+#"""
+
+class FibonacciRpcClient_master(object):
+
+    def __init__(self):
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host='52.73.30.120'))
+
+        self.channel = self.connection.channel()
+
+        result = self.channel.queue_declare(queue='', exclusive=True)
+        self.callback_queue = result.method.queue
+
+        self.channel.basic_consume(
+            queue=self.callback_queue,
+            on_message_callback=self.on_response,
+            auto_ack=True)
+
+    def on_response(self, ch, method, props, body):
+        if self.corr_id == props.correlation_id:
+            self.response = body
+
+    def call(self, n):
+        self.response = None
+        self.corr_id = str(uuid.uuid4())
+        self.channel.basic_publish(
+            exchange='',
+            routing_key='rpc_queue_master',
+            properties=pika.BasicProperties(
+                reply_to=self.callback_queue,
+                correlation_id=self.corr_id,
+            ),
+            body=n) ###
+        while self.response is None:
+            self.connection.process_data_events()
+        return self.response
+
+class FibonacciRpcClient_slave(object):
+
+    def __init__(self):
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host='52.73.30.120'))
+
+        self.channel = self.connection.channel()
+
+        result = self.channel.queue_declare(queue='', exclusive=True)
+        self.callback_queue = result.method.queue
+
+        self.channel.basic_consume(
+            queue=self.callback_queue,
+            on_message_callback=self.on_response,
+            auto_ack=True)
+
+    def on_response(self, ch, method, props, body):
+        if self.corr_id == props.correlation_id:
+            self.response = body
+
+    def call(self, n):
+        self.response = None
+        self.corr_id = str(uuid.uuid4())
+        self.channel.basic_publish(
+            exchange='',
+            routing_key='rpc_queue_slave',
+            properties=pika.BasicProperties(
+                reply_to=self.callback_queue,
+                correlation_id=self.corr_id,
+            ),
+            body=str(n))
+        while self.response is None:
+            self.connection.process_data_events()
+        return self.response
+
+class FibonacciRpcClient_sync(object):
+
+    def __init__(self):
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host='52.73.30.120'))
+
+        self.channel = self.connection.channel()
+
+        result = self.channel.queue_declare(queue='', exclusive=True)
+        self.callback_queue = result.method.queue
+
+        self.channel.basic_consume(
+            queue=self.callback_queue,
+            on_message_callback=self.on_response,
+            auto_ack=True)
+
+    def on_response(self, ch, method, props, body):
+        if self.corr_id == props.correlation_id:
+            self.response = body
+
+    def call(self, n):
+        self.response = None
+        self.corr_id = str(uuid.uuid4())
+        self.channel.basic_publish(
+            exchange='',
+            routing_key='rpc_queue_sync',
+            properties=pika.BasicProperties(
+                reply_to=self.callback_queue,
+                correlation_id=self.corr_id,
+            ),
+            body=str(n))
+        while self.response is None:
+            self.connection.process_data_events()
+        return self.response
+
+
+
+fibonacci_rpc_master = FibonacciRpcClient_master()
+fibonacci_rpc_slave = FibonacciRpcClient_slave()
+fibonacci_rpc_sync = FibonacciRpcClient_sync()
+
+#"""
+
+###############################################################
+"""
+
+print(" [x] Requesting Master fib('master')")
+response = fibonacci_rpc_master.call('master')
+print(" [.] Got %r" % response)
+print(" [x] Requesting Sync fib('sync')")
+response = fibonacci_rpc_sync.call('sync')
+print(" [.] Got %r" % response)
+
+print(" [x] Requesting Slave fib('slave')")
+response = fibonacci_rpc_slave.call('slave')
+print(" [.] Got %r" % response)
+
+print(" [x] Requesting Master fib('master')")
+response = fibonacci_rpc_master.call('master')
+print(" [.] Got %r" % response)
+print(" [x] Requesting Sync fib('sync')")
+response = fibonacci_rpc_sync.call('sync')
+print(" [.] Got %r" % response)
+
+print(" [x] Requesting Slave fib('slave')")
+response = fibonacci_rpc_slave.call('slave')
+print(" [.] Got %r" % response)
+
+
+"""
+#####################################################################
 
     
 
@@ -117,30 +268,40 @@ def dbRead():
     table=request.json['table']
     columns=request.json['columns']
     where=request.json['where']
-    if(table=="user"):
-        table_result = User.query.filter().all()
-        table_result_list=[]
-        for i in table_result:
-            table_result_list.append(i.representation())
-    elif(table=="ride"):
-        table_result = Ride.query.filter().all()
-        table_result_list=[]
-        for i in table_result:
 
-            table_result_list.append(i.representation())
-    elif(table=="area"):
-        table_result = Area.query.filter().all()
+    if(table=="user"):
+        table_result = fibonacci_rpc_slave.call("read$user")
+        table_result_deserialized = pickle.loads(table_result)
+        print('table_result_deserialized ',table_result_deserialized)
         table_result_list=[]
-        for i in table_result:
+        for i in table_result_deserialized:
             table_result_list.append(i.representation())
+
+    elif(table=="ride"):
+        table_result = fibonacci_rpc_slave.call("read$ride")
+        table_result_deserialized = pickle.loads(table_result)
+        print('table_result_deserialized ',table_result_deserialized)
+        table_result_list=[]
+        for i in table_result_deserialized:
+            table_result_list.append(i.representation())
+
+    elif(table=="area"):
+        table_result = fibonacci_rpc_slave.call("read$area")
+        table_result_deserialized = pickle.loads(table_result)
+        print('table_result_deserialized ',table_result_deserialized)
+        table_result_list=[]
+        for i in table_result_deserialized:
+            table_result_list.append(i.representation())
+
     else:
         table_result_list=[]
     print(table_result_list)
     return Response(json.dumps(table_result_list,default=str),status=200)
 
+
 @app.route('/api/v1/db/write',methods=["POST"])
 def dbWrite():
-    try:
+    #try:
         table=request.json['table']
 
         if(table=="user"):
@@ -149,19 +310,43 @@ def dbWrite():
                 insert_list=insert.split(";")
                 username=str(insert_list[0])
                 password=str(insert_list[1])
+
                 new_user = User(username,password)
-                db.session.add(new_user)
-                db.session.commit()
+
+                message_sent = list( ["write" , "user", "insert" , new_user] )
+                print('message_sent  ',message_sent)
+
+                message_sent_serialized = pickle.dumps(message_sent)
+                print('message_sent_serialized  ',message_sent_serialized)
+                
+                table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                print(table_result)
             
             if 'delete' in request.json:
                 delete=request.json['delete']
                 username=str(delete)
-                User.query.filter(User.username == username).delete()
-                db.session.commit()
+
+                message_sent = list( ["write" , "user", "delete" , username] )
+                print('message_sent  ',message_sent)
+
+                message_sent_serialized = pickle.dumps(message_sent)
+                print('message_sent_serialized  ',message_sent_serialized)
+                
+                table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                print(table_result)
+
+
 
             if 'clear' in request.json:
-                db.session.query(User).delete()
-                db.session.commit()
+
+                message_sent = list( ["write" , "user", "clear"] )
+                print('message_sent  ',message_sent)
+
+                message_sent_serialized = pickle.dumps(message_sent)
+                print('message_sent_serialized  ',message_sent_serialized)
+                
+                table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                print(table_result)
 
 
         if(table=="ride"):
@@ -175,36 +360,62 @@ def dbWrite():
                 Destination=int(insert_list[3])
                 TimestampObject= datetime.datetime.strptime(Timestamp,'%d-%m-%Y:%S-%M-%H')
                 new_ride = Ride(CreatedBy,TimestampObject,Source,Destination)
-                db.session.add(new_ride)
-                db.session.commit()
+
+                message_sent = list( ["write" , "ride", "insert" , new_ride] )
+                print('message_sent  ',message_sent)
+
+                message_sent_serialized = pickle.dumps(message_sent)
+                print('message_sent_serialized  ',message_sent_serialized)
+                
+                table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                print(table_result)                
+
+
             
             if 'update' in request.json:
                 update_list=request.json['update'].split(";")
                 RideID=int(update_list[0])
                 Username=str(update_list[1])
-                ride_to_update=Ride.query.filter(Ride.RideID == RideID).all()
-                print('before update users ',ride_to_update[0].Users)
-                if ride_to_update[0].Users=="":
-                    ride_to_update[0].Users=Username
-                else:
-                    ride_to_update[0].Users=ride_to_update[0].Users+";"+Username
-                print('after update users ',ride_to_update[0].Users)
-                db.session.commit()
+
+                message_sent = list( ["write" , "ride", "update" , RideID, Username] )
+                print('message_sent  ',message_sent)
+
+                message_sent_serialized = pickle.dumps(message_sent)
+                print('message_sent_serialized  ',message_sent_serialized)
+                
+                table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                print(table_result) 
+
+
 
             if 'delete' in request.json:
                 delete=request.json['delete']
                 RideID=int(delete)
-                Ride.query.filter(Ride.RideID == RideID).delete()
-                db.session.commit()
+
+                message_sent = list( ["write" , "ride", "delete" , RideID] )
+                print('message_sent  ',message_sent)
+
+                message_sent_serialized = pickle.dumps(message_sent)
+                print('message_sent_serialized  ',message_sent_serialized)
+                
+                table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                print(table_result)  
 
             if 'clear' in request.json:
-                db.session.query(Ride).delete()
-                db.session.commit()
+
+                message_sent = list( ["write" , "ride", "clear"] )
+                print('message_sent  ',message_sent)
+                message_sent_serialized = pickle.dumps(message_sent)
+                print('message_sent_serialized  ',message_sent_serialized)
+                
+                table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                print(table_result)  
+
 
         return Response(json.dumps(dict()),status=200)
-    except:
-        print('EXCEPT ERROR IN WRITE !!')
-        return Response(json.dumps(dict()),status=500)   
+    #except:
+    #    print('EXCEPT ERROR IN WRITE !!')
+    #    return Response(json.dumps(dict()),status=500)   
 
 @app.route('/api/v1/_count',methods=['GET','DELETE'])
 def getCount():
