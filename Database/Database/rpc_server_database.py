@@ -120,12 +120,12 @@ if(int(sys.argv[1]) == 0):
                 Username = n[4]
 
                 ride_to_update=Ride.query.filter(Ride.RideID == RideID).all()
-                print('before update users ',ride_to_update[0].Users)
+                #print('before update users ',ride_to_update[0].Users)
                 if ride_to_update[0].Users=="":
                     ride_to_update[0].Users=Username
                 else:
                     ride_to_update[0].Users=ride_to_update[0].Users+";"+Username
-                print('after update users ',ride_to_update[0].Users)
+                #print('after update users ',ride_to_update[0].Users)
                 db.session.commit()
 
             elif(command == "delete"):
@@ -180,7 +180,10 @@ if(int(sys.argv[1]) == 1):
     channel.queue_declare(queue='rpc_queue_sync')
     
     channel.basic_qos(prefetch_count=1)    
-    
+
+    def func__sync(n):
+        return " something from slave "    
+
 
     def func_slave(n):
         command =[str(i) for i in n.split("$")]
@@ -213,15 +216,54 @@ if(int(sys.argv[1]) == 1):
 
 
     def func_sync(n):
-        """
-        if n == 0:
-            return 0
-        elif n == 1:
-            return 1
+        table = str(n[1])
+        if(table == "user"):
+            command = str(n[2])
+            if(command == "insert"):
+                new_user = n[3]
+                db.session.add(new_user)
+                db.session.commit()
+            elif(command == "delete"):
+                username = n[3]
+                User.query.filter(User.username == username).delete()
+                db.session.commit()
+            elif(command=="clear"):
+                db.session.query(User).delete()
+                db.session.commit()
+            else:
+                pass
+        elif(table == "ride"):
+            command = str(n[2])
+            if(command == "insert"):
+                new_ride = n[3]
+                db.session.add(new_ride)
+                db.session.commit()
+            elif(command == "update"):
+                RideID = n[3]
+                Username = n[4]
+
+                ride_to_update=Ride.query.filter(Ride.RideID == RideID).all()
+                #print('before update users ',ride_to_update[0].Users)
+                if ride_to_update[0].Users=="":
+                    ride_to_update[0].Users=Username
+                else:
+                    ride_to_update[0].Users=ride_to_update[0].Users+";"+Username
+                #print('after update users ',ride_to_update[0].Users)
+                db.session.commit()
+
+            elif(command == "delete"):
+                RideID = n[3]
+                Ride.query.filter(Ride.RideID == RideID).delete()
+                db.session.commit()
+            elif(command=="clear"):
+                db.session.query(Ride).delete()
+                db.session.commit()
+            else:
+                pass
         else:
-            return func(n - 1) + func(n - 2)
-        """
-        return " something from sync "
+            pass
+
+        return " something from master "
 
 
     def on_request_slave(ch, method, props, body):
@@ -241,10 +283,10 @@ if(int(sys.argv[1]) == 1):
 
 
     def on_request_sync(ch, method, props, body):
-        n = str(body,"utf-8")
-
+        #n = str(body,"utf-8")
+        n = pickle.loads(body)
         print(" [.] func_sync(%s)" % n)
-        response = str(func_sync(n)) + " from SYNC"
+        response = func__sync(n)
 
         ch.basic_publish(exchange='',
                         routing_key=props.reply_to,

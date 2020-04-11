@@ -219,7 +219,7 @@ class FibonacciRpcClient_sync(object):
                 reply_to=self.callback_queue,
                 correlation_id=self.corr_id,
             ),
-            body=str(n))
+            body=n) ###
         while self.response is None:
             self.connection.process_data_events()
         return self.response
@@ -320,6 +320,8 @@ def dbWrite():
                 print('message_sent_serialized  ',message_sent_serialized)
                 
                 table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                table_result = fibonacci_rpc_sync.call(message_sent_serialized)
+
                 print(table_result)
             
             if 'delete' in request.json:
@@ -333,6 +335,7 @@ def dbWrite():
                 print('message_sent_serialized  ',message_sent_serialized)
                 
                 table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                table_result = fibonacci_rpc_sync.call(message_sent_serialized)
                 print(table_result)
 
 
@@ -346,6 +349,7 @@ def dbWrite():
                 print('message_sent_serialized  ',message_sent_serialized)
                 
                 table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                table_result = fibonacci_rpc_sync.call(message_sent_serialized)
                 print(table_result)
 
 
@@ -368,6 +372,7 @@ def dbWrite():
                 print('message_sent_serialized  ',message_sent_serialized)
                 
                 table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                table_result = fibonacci_rpc_sync.call(message_sent_serialized)
                 print(table_result)                
 
 
@@ -384,6 +389,7 @@ def dbWrite():
                 print('message_sent_serialized  ',message_sent_serialized)
                 
                 table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                table_result = fibonacci_rpc_sync.call(message_sent_serialized)
                 print(table_result) 
 
 
@@ -399,6 +405,7 @@ def dbWrite():
                 print('message_sent_serialized  ',message_sent_serialized)
                 
                 table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                table_result = fibonacci_rpc_sync.call(message_sent_serialized)
                 print(table_result)  
 
             if 'clear' in request.json:
@@ -409,6 +416,7 @@ def dbWrite():
                 print('message_sent_serialized  ',message_sent_serialized)
                 
                 table_result = fibonacci_rpc_master.call(message_sent_serialized)
+                table_result = fibonacci_rpc_sync.call(message_sent_serialized)
                 print(table_result)  
 
 
