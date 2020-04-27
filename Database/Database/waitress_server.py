@@ -18,12 +18,11 @@ import app as app_file
 
 
 app=Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@52.73.30.120/Cloud_Computing_Assignment'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@52.73.30.120/Cloud_Computing_Assignment'
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:Iusepostgres@321@localhost/Cloud_Computing_Assignment'
 db=SQLAlchemy(app)
 CORS(app)
 app.debug = True
-print('Connected to DB !!')
 
 
 class Area(db.Model):
@@ -76,5 +75,5 @@ class Ride(db.Model):
 
 
 
-serve(app_file.app, host='0.0.0.0', port=80)
+serve(app_file.app, host='0.0.0.0', port=80, )
 

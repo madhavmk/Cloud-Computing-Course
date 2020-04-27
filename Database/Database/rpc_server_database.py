@@ -86,7 +86,7 @@ class Ride(db.Model):
 if(int(sys.argv[1]) == 0):
 
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host='52.73.30.120'))
+        pika.ConnectionParameters(host='52.73.30.120', heartbeat=0))
 
     channel = connection.channel()
 
@@ -172,7 +172,7 @@ if(int(sys.argv[1]) == 0):
 
 if(int(sys.argv[1]) == 1):
     connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='52.73.30.120'))
+    pika.ConnectionParameters(host='52.73.30.120', heartbeat=0))
 
     channel = connection.channel()
     
