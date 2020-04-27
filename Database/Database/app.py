@@ -26,7 +26,9 @@ import atexit
 from apscheduler.scheduler import Scheduler
 
 import docker
+
 import os
+import sys
 
 import kazoo
 from kazoo.client import KazooClient
@@ -76,7 +78,7 @@ client = docker.from_env()
 
 global slave_name_counter
 slave_name_counter = 0
-number_slaves_to_spawn = 5
+number_slaves_to_spawn = 1
 
 for i in range(number_slaves_to_spawn):
     #client.containers.run("worker:v1", name=new_worker_name, detach=True)
@@ -90,7 +92,7 @@ for i in range(number_slaves_to_spawn):
 
 
 #Adds slave and master to znodes
-running_containers = client.containers.list() # running_containers = client.containers.list(all=True)
+running_containers = client.containers.list()
 slave_container_id_name_pid=[]
 #master_container_id_name_pid=[]
 for i in running_containers:
@@ -120,7 +122,8 @@ def watch_slave_node(children):
 
 #@zk.DataWatch(master_path)
 def watch_master_node(CHANGED):
-    print("Master Node data Change !! ")
+    global slave_name_counter
+    print("\nMaster Node data Change !! ")
     print("Leader Election !!")
     slave_list = zk.get_children(slave_path)
     slave_container_id_name_pid=[]
@@ -129,27 +132,46 @@ def watch_master_node(CHANGED):
         data = str( data.decode("utf-8") ).split(" ")
         slave_container_id_name_pid.append(data)
     
-    if( len(slave_container_id_name_pid) == 1):
+    if( len(slave_container_id_name_pid) == 0): ######
         print("ELECTION CANCEL !! No Slaves to pick from")
     
     else:
-        max_container_id = -1
-        max_container_name = -1
-        max_container_pid = -1
+        min_container_id = int(sys.maxsize)
+        min_container_name = int(sys.maxsize)
+        min_container_pid = int(sys.maxsize)
 
         for i in slave_container_id_name_pid:
-            if int( i[2] ) > int( max_container_pid ):
-                max_container_id = i[0]
-                max_container_name = i[1]
-                max_container_pid = i[2]
+            if int( i[2] ) < int( min_container_pid ):
+                min_container_id = i[0]
+                min_container_name = i[1]
+                min_container_pid = i[2]
 
         ##KILL OLD PROCESSS AND START NEW MASTER PROCESS IN PYTHON
 
 
-        zk.delete(slave_path + "/" + max_container_name, recursive=True)
-        master_container_id_name_pid_string = str(max_container_id)+" "+str(max_container_name)+" "+str(max_container_pid)
+        zk.delete(slave_path + "/" + min_container_name, recursive=True)
+        master_container_id_name_pid_string = str(min_container_id)+" "+str(min_container_name)+" "+str(min_container_pid)
         zk.set(master_path, master_container_id_name_pid_string.encode('utf-8'))
-        print("NEW LEADER !! ", zk.get(master_path)[0].decode("utf-8"))
+        print("NEW LEADER !! ", zk.get(master_path)[0].decode("utf-8")) 
+
+
+        container_name = str("ws_"+str(slave_name_counter))
+        slave_name_counter += 1
+        client.containers.run("debian:stretch-slim", name=container_name, detach=True, tty=True)
+        #client.containers.get(new_worker_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 1", detach =True)
+        client.containers.get(container_name).exec_run("ls", detach =True)
+
+        container_id = client.containers.get(container_name).id
+        container_name = client.containers.get(container_name).name
+        stream = os.popen("sudo docker inspect --format '{{ .State.Pid }}' " +'"' + str(container_id) + '"' )
+        container_pid = stream.read()
+        container_pid = int(container_pid)
+        slave_container_id_name_pid.append( [str(container_id),str(container_name),str(container_pid)] )
+
+        zk.create(slave_path + "/" + str(container_name))
+        slave_container_id_name_pid_string = str(container_id)+" "+str(container_name)+" "+str(container_pid)
+        zk.set(slave_path + "/" + str(container_name), slave_container_id_name_pid_string.encode('utf-8'))
+
 
 
 time.sleep(1)
@@ -193,8 +215,10 @@ def job_function():
     
     if time_period_read_count == 0:
         number_slaves_needed = 1
+        
     else:
         number_slaves_needed = math.ceil( time_period_read_count/20 )
+    print("Number of slaves needed = ", number_slaves_needed)
     
 
     number_slaves_running = len(zk.get_children(slave_path))
@@ -258,16 +282,13 @@ def job_function():
 
 
     print(zk.get_children(slave_path))
-
-
-
     ################################
 
     previous_v= v.value
-    # Do your work here
+
 
 #######################################################
-# Shutdown your cron thread if the web process is stopped
+
 
 def at_exit_function():
 
@@ -703,5 +724,85 @@ def getCount():
 
 @app.route('/api/v1/db/main',methods=['GET'])
 def sendHello():
-    incrementCount(v,lock)
+    
     return "Hello world from Database"
+
+
+@app.route('/api/v1/crash/master',methods=['GET'])
+def crash_master():
+    print("CRASHING MASTER!!")
+    current_master_id_name_pid = str( zk.get(master_path)[0].decode("utf-8")).split(" ")
+    current_master_name = current_master_id_name_pid[1]
+    client.containers.get(current_master_name).stop()
+    client.containers.get(current_master_name).remove()
+
+    zk.exists(master_path, watch = watch_master_node)
+    zk.set(master_path, b"")
+
+    time.sleep(0.25)
+    return Response(json.dumps(current_master_name),status=200)
+
+
+@app.route('/api/v1/crash/slave',methods=['GET'])
+def crash_slave():
+
+    global slave_name_counter
+    print("CRASHING SLAVE!!")
+
+    slave_list = zk.get_children(slave_path)
+    slave_container_id_name_pid=[]
+    for slave in slave_list:
+        data, stat = zk.get(slave_path + "/" + slave)
+        data = str( data.decode("utf-8") ).split(" ")
+        slave_container_id_name_pid.append(data)
+
+    max_container_id = -1
+    max_container_name = -1
+    max_container_pid = -1
+
+    for i in slave_container_id_name_pid:
+        if int( i[2] ) > int( max_container_pid ):
+            max_container_id = i[0]
+            max_container_name = i[1]
+            max_container_pid = i[2]
+
+    client.containers.get(max_container_name).stop()
+    client.containers.get(max_container_name).remove()
+    zk.delete(slave_path + "/" + max_container_name, recursive=True)
+    print("Deleted container\t",max_container_name)
+
+    container_name = str("ws_"+str(slave_name_counter))
+    slave_name_counter += 1
+    client.containers.run("debian:stretch-slim", name=container_name, detach=True, tty=True)
+    #client.containers.get(new_worker_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 1", detach =True)
+    client.containers.get(container_name).exec_run("ls", detach =True)
+
+    container_id = client.containers.get(container_name).id
+    container_name = client.containers.get(container_name).name
+    stream = os.popen("sudo docker inspect --format '{{ .State.Pid }}' " +'"' + str(container_id) + '"' )
+    container_pid = stream.read()
+    container_pid = int(container_pid)
+    slave_container_id_name_pid.append( [str(container_id),str(container_name),str(container_pid)] )
+
+    zk.create(slave_path + "/" + str(container_name))
+    slave_container_id_name_pid_string = str(container_id)+" "+str(container_name)+" "+str(container_pid)
+    zk.set(slave_path + "/" + str(container_name), slave_container_id_name_pid_string.encode('utf-8'))
+
+    return Response(json.dumps(int(container_pid)),status=200)
+
+
+@app.route('/api/v1/worker/list',methods=['GET'])
+def worker_list():
+    print("Worker List ")
+    slave_list = zk.get_children(slave_path)
+    slave_container_id_name_pid=[]
+    for slave in slave_list:
+        data, stat = zk.get(slave_path + "/" + slave)
+        data = str( data.decode("utf-8") ).split(" ")
+        slave_container_id_name_pid.append(data)
+
+    pid_list = [int( i[2] ) for i in slave_container_id_name_pid]
+    pid_list = sorted( pid_list )
+
+
+    return Response(json.dumps( pid_list ),status=200)
