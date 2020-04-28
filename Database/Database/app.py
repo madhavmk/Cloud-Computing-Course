@@ -81,11 +81,12 @@ slave_name_counter = 0
 number_slaves_to_spawn = 1
 
 for i in range(number_slaves_to_spawn):
-    #client.containers.run("worker:v1", name=new_worker_name, detach=True)
+    #
     container_name = str("ws_"+str(i))
-    client.containers.run("debian:stretch-slim", name=container_name, detach=True, tty=True)
-    #client.containers.get(new_worker_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 1", detach =True)
-    client.containers.get(container_name).exec_run("ls", detach =True)
+    #client.containers.run("debian:stretch-slim", name=container_name, detach=True, tty=True)
+    client.containers.run("worker:v1", name=container_name, detach=True)
+    client.containers.get(container_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 1", detach =True)
+    #client.containers.get(container_name).exec_run("ls", detach =True)
     print("STARTED Slave container\t", container_name)
 
     slave_name_counter += 1
@@ -146,8 +147,11 @@ def watch_master_node(CHANGED):
                 min_container_name = i[1]
                 min_container_pid = i[2]
 
-        ##KILL OLD PROCESSS AND START NEW MASTER PROCESS IN PYTHON
-
+        #KILL OLD PROCESSS AND START NEW MASTER PROCESS IN PYTHON
+        
+        client.containers.get(min_container_name).exec_run("pkill python", detach =True)
+        client.containers.get(min_container_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 0", detach =True)
+        #####
 
         zk.delete(slave_path + "/" + min_container_name, recursive=True)
         master_container_id_name_pid_string = str(min_container_id)+" "+str(min_container_name)+" "+str(min_container_pid)
@@ -155,10 +159,12 @@ def watch_master_node(CHANGED):
         print("NEW LEADER !! ", zk.get(master_path)[0].decode("utf-8")) 
 
 
+        #####Start new slave to replace master
         container_name = str("ws_"+str(slave_name_counter))
         slave_name_counter += 1
-        client.containers.run("debian:stretch-slim", name=container_name, detach=True, tty=True)
-        #client.containers.get(new_worker_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 1", detach =True)
+        #client.containers.run("debian:stretch-slim", name=container_name, detach=True, tty=True)
+        client.containers.run("worker:v1", name=container_name, detach=True)
+        client.containers.get(new_worker_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 1", detach =True)
         client.containers.get(container_name).exec_run("ls", detach =True)
 
         container_id = client.containers.get(container_name).id
@@ -232,8 +238,10 @@ def job_function():
         for i in range(number_slaves_to_spawn):
             time.sleep(0.25)
             container_name = str("ws_"+str(slave_name_counter))
-            client.containers.run("debian:stretch-slim", name=container_name, detach=True, tty=True)
-            client.containers.get(container_name).exec_run("ls", detach =True)
+            #client.containers.run("debian:stretch-slim", name=container_name, detach=True, tty=True)
+            client.containers.run("worker:v1", name=container_name, detach=True)
+            #client.containers.get(container_name).exec_run("ls", detach =True)
+            client.containers.get(container_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 1", detach =True)
             print("STARTED Slave container\t", container_name)
             slave_name_counter += 1
 
@@ -773,9 +781,10 @@ def crash_slave():
 
     container_name = str("ws_"+str(slave_name_counter))
     slave_name_counter += 1
-    client.containers.run("debian:stretch-slim", name=container_name, detach=True, tty=True)
+    #client.containers.run("debian:stretch-slim", name=container_name, detach=True, tty=True)
+    client.containers.run("worker:v1", name=container_name, detach=True)
     #client.containers.get(new_worker_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 1", detach =True)
-    client.containers.get(container_name).exec_run("ls", detach =True)
+    client.containers.get(container_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 1", detach =True)
 
     container_id = client.containers.get(container_name).id
     container_name = client.containers.get(container_name).name
