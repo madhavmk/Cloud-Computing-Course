@@ -13,7 +13,7 @@ import ast
 import math
 
 from multiprocessing import Process, Value, Lock
-#Install psycopg2 or psycopg2-binary
+#Install psycopg2-binary
 #Install waitress
 #sudo pip3 install apscheduler==2.1.2
 
@@ -164,7 +164,7 @@ def watch_master_node(CHANGED):
         slave_name_counter += 1
         #client.containers.run("debian:stretch-slim", name=container_name, detach=True, tty=True)
         client.containers.run("worker:v1", name=container_name, detach=True)
-        client.containers.get(new_worker_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 1", detach =True)
+        client.containers.get(container_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 1", detach =True)
         client.containers.get(container_name).exec_run("ls", detach =True)
 
         container_id = client.containers.get(container_name).id
