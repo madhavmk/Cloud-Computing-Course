@@ -736,7 +736,7 @@ def sendHello():
     return "Hello world from Database"
 
 
-@app.route('/api/v1/crash/master',methods=['GET'])
+@app.route('/api/v1/crash/master',methods=['POST'])
 def crash_master():
     print("CRASHING MASTER!!")
     current_master_id_name_pid = str( zk.get(master_path)[0].decode("utf-8")).split(" ")
@@ -748,10 +748,12 @@ def crash_master():
     zk.set(master_path, b"")
 
     time.sleep(0.25)
-    return Response(json.dumps(current_master_name),status=200)
+    #return Response(json.dumps(current_master_name),status=200)
+    return Response(json.dumps(dict()),status=200)
 
 
-@app.route('/api/v1/crash/slave',methods=['GET'])
+
+@app.route('/api/v1/crash/slave',methods=['POST'])
 def crash_slave():
 
     global slave_name_counter
@@ -797,7 +799,8 @@ def crash_slave():
     slave_container_id_name_pid_string = str(container_id)+" "+str(container_name)+" "+str(container_pid)
     zk.set(slave_path + "/" + str(container_name), slave_container_id_name_pid_string.encode('utf-8'))
 
-    return Response(json.dumps(int(container_pid)),status=200)
+    #return Response(json.dumps(int(container_pid)),status=200)
+    return Response(json.dumps(dict()),status=200)
 
 
 @app.route('/api/v1/worker/list',methods=['GET'])
