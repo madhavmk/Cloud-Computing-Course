@@ -210,7 +210,7 @@ previous_v=0
 cron = Scheduler(daemon=True)
 
 
-@cron.interval_schedule(seconds=30)
+@cron.interval_schedule(seconds=120)
 def job_function():
     global slave_name_counter
     global previous_v
