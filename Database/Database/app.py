@@ -137,13 +137,13 @@ def watch_master_node(CHANGED): # create a Data watch for changes on the data of
         min_container_name = int(sys.maxsize)
         min_container_pid = int(sys.maxsize)
 
-        for i in slave_container_id_name_pid:
+        for i in slave_container_id_name_pid:  # Find slave container with smallest PID
             if int( i[2] ) < int( min_container_pid ):
                 min_container_id = i[0]
                 min_container_name = i[1]
                 min_container_pid = i[2]
 
-        # Kill slave worker process on the slave container.
+        # Kill slave worker process on the smallest PID slave container.
         # Then start a master worker process to convert slave to master worker.
         client.containers.get(min_container_name).exec_run("pkill python", detach =True)
         client.containers.get(min_container_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 0", detach =True)
@@ -732,29 +732,29 @@ def sendHello():
     return "Hello world from Database"
 
 
-@app.route('/api/v1/crash/master',methods=['POST'])
+@app.route('/api/v1/crash/master',methods=['POST']) # Master leader election
 def crash_master():
     print("CRASHING MASTER!!")
     current_master_id_name_pid = str( zk.get(master_path)[0].decode("utf-8")).split(" ")
     current_master_name = current_master_id_name_pid[1]
-    client.containers.get(current_master_name).stop()
+    client.containers.get(current_master_name).stop()  # Stop and remove the current master container
     client.containers.get(current_master_name).remove()
 
-    zk.exists(master_path, watch = watch_master_node)
-    zk.set(master_path, b"")
+    zk.exists(master_path, watch = watch_master_node)  
+    zk.set(master_path, b"")   # Change the master znode data in order to automatically call the master election algorithm
 
     time.sleep(0.25)
     return Response(json.dumps(dict()),status=200)
 
 
 
-@app.route('/api/v1/crash/slave',methods=['POST'])
+@app.route('/api/v1/crash/slave',methods=['POST'])  # Slave leader election
 def crash_slave():
 
     global slave_name_counter
     print("CRASHING SLAVE!!")
 
-    slave_list = zk.get_children(slave_path)
+    slave_list = zk.get_children(slave_path)  # Get all slave details.
     slave_container_id_name_pid=[]
     for slave in slave_list:
         data, stat = zk.get(slave_path + "/" + slave)
@@ -765,47 +765,47 @@ def crash_slave():
     max_container_name = -1
     max_container_pid = -1
 
-    for i in slave_container_id_name_pid:
+    for i in slave_container_id_name_pid:  # Find slave containing largest PID
         if int( i[2] ) > int( max_container_pid ):
             max_container_id = i[0]
             max_container_name = i[1]
             max_container_pid = i[2]
 
-    client.containers.get(max_container_name).stop()
+    client.containers.get(max_container_name).stop()  # Stop slave containing largest PID
     client.containers.get(max_container_name).remove()
-    zk.delete(slave_path + "/" + max_container_name, recursive=True)
+    zk.delete(slave_path + "/" + max_container_name, recursive=True)  # Delete largest PID slave details from /slave znode 
     print("Deleted container\t",max_container_name)
 
     container_name = str("ws_"+str(slave_name_counter))
     slave_name_counter += 1
-    client.containers.run("worker:v1", name=container_name, detach=True)
-    client.containers.get(container_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 1", detach =True)
+    client.containers.run("worker:v1", name=container_name, detach=True)  
+    client.containers.get(container_name).exec_run("python3 Cloud-Computing-Course/Database/Database/rpc_server_database.py 1", detach =True)  # Start a new slave worker container process
 
     container_id = client.containers.get(container_name).id
     container_name = client.containers.get(container_name).name
     stream = os.popen("sudo docker inspect --format '{{ .State.Pid }}' " +'"' + str(container_id) + '"' )
     container_pid = stream.read()
     container_pid = int(container_pid)
-    slave_container_id_name_pid.append( [str(container_id),str(container_name),str(container_pid)] )
+    slave_container_id_name_pid.append( [str(container_id),str(container_name),str(container_pid)] ) 
 
     zk.create(slave_path + "/" + str(container_name))
     slave_container_id_name_pid_string = str(container_id)+" "+str(container_name)+" "+str(container_pid)
-    zk.set(slave_path + "/" + str(container_name), slave_container_id_name_pid_string.encode('utf-8'))
+    zk.set(slave_path + "/" + str(container_name), slave_container_id_name_pid_string.encode('utf-8'))   # Add new child znode under /slave to store new slave details.
 
     return Response(json.dumps(dict()),status=200)
 
 
-@app.route('/api/v1/worker/list',methods=['GET'])
+@app.route('/api/v1/worker/list',methods=['GET'])  
 def worker_list():
     print("Worker List ")
     slave_list = zk.get_children(slave_path)
     slave_container_id_name_pid=[]
-    for slave in slave_list:
+    for slave in slave_list:  # Find all the children znodes under /slave znode.
         data, stat = zk.get(slave_path + "/" + slave)
         data = str( data.decode("utf-8") ).split(" ")
-        slave_container_id_name_pid.append(data)
+        slave_container_id_name_pid.append(data)  # Read PID of all the slave workers
 
     pid_list = [int( i[2] ) for i in slave_container_id_name_pid]
-    pid_list = sorted( pid_list )
+    pid_list = sorted( pid_list )  # Sort the list in ascending order of PID
 
     return Response(json.dumps( pid_list ),status=200)
