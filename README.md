@@ -30,11 +30,9 @@ sudo docker run -p 2181:2181 -p 2888:2888 -p 3888:3888 --name zookeeper --restar
 
 sudo python3 Cloud-Computing-Course/Database/Database/waitress_server.py
 
+(( 
 All project files located in Directory : /Database/Database/
-
 flask app code : app.py
-
 worker code : rpc_server_database.py (with command line argument flag 0 or 1)
-
 Waitress Server code: waitress_server.py
-
+))
